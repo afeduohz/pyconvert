@@ -169,7 +169,7 @@ def converter(template: str = '') -> Tuple[bool, Callable[[str], Any]]:
     def _proc_eval(tokens: List[str], context: Context) -> Any:
         return _proc(tokens, context)
 
-    @deal(['True', 'False', 'None'])
+    @deal(Token.reserved)
     def _proc_literal(tokens: List[str], context: Context) -> Union[bool, None]:
         t = tokens.pop(0)
         return None if t == 'None' else True if t == 'True' else False
