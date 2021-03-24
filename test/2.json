@@ -1,0 +1,14 @@
+{
+  "servers": [{
+    "name": "server1",
+    "uuid": "guid-0001",
+    "disks": [{
+      "uuid": "d.sk.0001",
+      "type": "ssd"
+    },{
+      "uuid": "d.sk.0002",
+      "type": "hdd"
+    }]
+  }],
+  "time": "2021-10-11 19:29:01"
+}
