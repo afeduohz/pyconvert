@@ -23,6 +23,14 @@ class Token:
     predefined = ['=', '{', '}', '[', ']', '(', ')', '<', '>']
     ignored = [' ', '\t', '\n', '\r']
     reserved = ['True', 'False', 'None']
+    decoded = {123: '{', 91: '[', 40: '(', 60: '<', 32: ' ', 9: '\t', 10: '\n', 13: '\r', 92: '\\'}
+
+    @classmethod
+    def decode(cls, inputs: str) -> str:
+        tmp = inputs
+        for c, r in cls.decoded.items():
+            tmp = tmp.replace('&%s;' % c, r)
+        return tmp
 
     @classmethod
     def tokenize(cls, inputs: str) -> List[str]:
@@ -125,19 +133,22 @@ def converter(template: str = '') -> Tuple[bool, Callable[[str], Any]]:
             r = d
         return d
 
+    def _optional_ctx(tokens: List[str], parent: Context) -> Any:
+        if tokens[0] == '<':
+            return _proc(tokens, parent)
+        return parent.refer
+
     @deal('<')
     @strip('<', '>')
-    def _proc_cur(tokens: List[str], parent: Context) -> Any:
-        v = parent.refer
+    def _proc_ctx(tokens: List[str], parent: Context) -> Any:
         if tokens[0] != '>':
-            v = _lookup(tokens.pop(0), parent)
-        return v
+            return _lookup(tokens.pop(0), parent)
+        return parent.refer
 
     @deal('[')
     @strip('[', ']')
     def _proc_list(tokens: List[str], parent: Context):
-        Asserter.eq(tokens[0], '<')
-        current = _proc(tokens, parent)
+        current = _optional_ctx(tokens, parent)
         val = []
         while not tokens[0] == ']':
             if isinstance(current, (list, tuple, dict)):
@@ -154,8 +165,7 @@ def converter(template: str = '') -> Tuple[bool, Callable[[str], Any]]:
     @deal('{')
     @strip('{', '}')
     def _proc_dict(tokens: List[str], parent: Context) -> Dict[str, Any]:
-        Asserter.eq(tokens[0], '<')
-        current = _proc(tokens, parent)
+        current = _optional_ctx(tokens, parent)
         val = {}
         while not tokens[0] == '}':
             key = str.strip(tokens.pop(0))
@@ -184,12 +194,49 @@ def converter(template: str = '') -> Tuple[bool, Callable[[str], Any]]:
             return int(t)
         elif re.search(r'^[-+]?([0-9]+(\.[0-9]*)?|\.[0-9]+)([eE][-+]?[0-9]+)?$', str.strip(t)):
             return float(t)
-        return str(t)
+        return Token.decode(str(t))
 
     return not not _template, process
 
 
 class Converter:
+    """
+    `Stuff`
+        1. {} object
+        2. [] array
+        3. True/False
+        4. None
+        5. Integer
+        6. Float
+        7. String
+    `Context`
+        1. {} and [] has `context`, which means it's values are evaluated from this `context`.
+            it looks like `{<...>...}` and `[<...>...]`
+        2. if `context` is as same as father stuff, it can be empty as `<>`. It can be ignore thoroughly.
+            eg. {</root>k=v}, {<>k=v}, {k=v}
+        3. if the root `context` is ignored, it is `source object` by default.
+    `Value Eval`
+        Value is wrapped by `(` and `)`. Here is a kind of special value `Path`, that indicates the value
+        evaluated from `source object`.
+            eg. ({}), (True), (/root)
+    `Path`
+        There are 2 path expressions:
+
+        1. /x which means value evaluated from `source object` root.
+        2. ./x which means value evaluated from parent `context`.
+    `Escape`
+        An series of characters need be encoded in `String`.
+
+        - { &123;
+        - [ &91;
+        - ( &40;
+        - < &60;
+        - white-space &32;
+        - \\\\t &9;
+        - \\\\n &10;
+        - \\\\r &13;
+        - \\\\ &92; (optional)
+    """
 
     def __init__(self, template: str = ''):
         self._c = converter(template)

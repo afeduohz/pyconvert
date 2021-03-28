@@ -11,7 +11,7 @@ def pretty_print(o):
 class TestConverter(unittest.TestCase):
 
     def test_from_file(self):
-        template = '{</servers>ss=[<>{<>n=(./name)}]datetime=(/time)}'
+        template = '{</servers>ss=[{n=(./name)}]datetime=(/time)x=(&32;&92;)}'
         with open('./1.json', 'r') as f:
             data = json.load(f)
             conv = Converter(template)
@@ -19,7 +19,7 @@ class TestConverter(unittest.TestCase):
             pretty_print(dest)
 
     def test_deep_recur(self):
-        template = '{</servers>ss=[<>{<>n=(./name)d=[<./disks>{<>u=(./uuid)t=(./type)clone=(True)}]}]datetime=(/time)}'
+        template = '{</servers>ss=[{n=(./name)d=[<./disks>{u=(./uuid)t=(./type)clone=(True)}]}]datetime=(/time)}'
         with open('./2.json', 'r') as f:
             data = json.load(f)
             conv = Converter(template)
