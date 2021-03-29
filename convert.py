@@ -20,10 +20,11 @@ class Asserter:
 
 
 class Token:
-    predefined = ['=', '{', '}', '[', ']', '(', ')', '<', '>']
-    ignored = [' ', '\t', '\n', '\r']
-    reserved = ['True', 'False', 'None']
-    decoded = {123: '{', 91: '[', 40: '(', 60: '<', 32: ' ', 9: '\t', 10: '\n', 13: '\r', 92: '\\'}
+    predefined, ignored, reserved =\
+        ['=', '{', '}', '[', ']', '(', ')', '<', '>'], [' ', '\t', '\n', '\r'], ['True', 'False', 'None']
+
+    decoded = {123: '{', 125: '}', 91: '[', 93: ']', 40: '(', 41: ')', 60: '<', 61: '=', 62: '>',
+               32: ' ', 9: '\t', 10: '\n', 13: '\r', 92: '\\'}
 
     @classmethod
     def decode(cls, inputs: str) -> str:
@@ -225,12 +226,17 @@ class Converter:
         1. /x which means value evaluated from `source object` root.
         2. ./x which means value evaluated from parent `context`.
     `Escape`
-        An series of characters need be encoded in `String`.
+        A series of characters need be encoded in `String`.
 
         - { &123;
+        - { &125;
         - [ &91;
+        - ] &93;
         - ( &40;
+        - ) &41;
         - < &60;
+        - > &62;
+        - = &61;
         - white-space &32;
         - \\\\t &9;
         - \\\\n &10;
